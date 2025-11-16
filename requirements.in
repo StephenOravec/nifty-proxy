@@ -1,3 +1,5 @@
 flask
 requests
 google-cloud-secret-manager
+google-auth
+google-auth-lib
