@@ -20,8 +20,15 @@ google-api-core[grpc]==2.28.1
     # via google-cloud-secret-manager
 google-auth==2.43.0
     # via
+    #   -r requirements.in
     #   google-api-core
+    #   google-auth-httplib2
+    #   google-auth-oauthlib
     #   google-cloud-secret-manager
+google-auth-httplib2==0.2.1
+    # via -r requirements.in
+google-auth-oauthlib==1.2.2
+    # via -r requirements.in
 google-cloud-secret-manager==2.25.0
     # via -r requirements.in
 googleapis-common-protos[grpc]==1.72.0
@@ -40,6 +47,8 @@ grpcio==1.76.0
     #   grpcio-status
 grpcio-status==1.76.0
     # via google-api-core
+httplib2==0.31.0
+    # via google-auth-httplib2
 idna==3.11
     # via requests
 itsdangerous==2.2.0
@@ -51,6 +60,8 @@ markupsafe==3.0.3
     #   flask
     #   jinja2
     #   werkzeug
+oauthlib==3.3.1
+    # via requests-oauthlib
 proto-plus==1.26.1
     # via
     #   google-api-core
@@ -69,10 +80,15 @@ pyasn1==0.6.1
     #   rsa
 pyasn1-modules==0.4.2
     # via google-auth
+pyparsing==3.2.5
+    # via httplib2
 requests==2.32.5
     # via
     #   -r requirements.in
     #   google-api-core
+    #   requests-oauthlib
+requests-oauthlib==2.0.0
+    # via google-auth-oauthlib
 rsa==4.9.1
     # via google-auth
 typing-extensions==4.15.0
