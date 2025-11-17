@@ -83,7 +83,7 @@ if REDIS_URL:
 else:
     # In-memory limiter (per instance). OK for small workloads/testing.
     limiter = Limiter(
-        app,
+        app=app,
         key_func=client_key_func,
         default_limits=[RATE_LIMIT]
     )
