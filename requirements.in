@@ -1,6 +1,11 @@
 flask
+flask-cors
+flask-limiter
 requests
-google-cloud-secret-manager
 google-auth
 google-auth-oauthlib
+google-oauth
+google-cloud-firestore
 google-auth-httplib2
+google-api-core
+google-cloud-secret-manager
