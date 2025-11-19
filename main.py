@@ -1,17 +1,3 @@
-"""
-Production-ready proxy for Nifty-Bot.
-
-Responsibilities:
-- Accepts frontend requests (POST /chat)
-- Validates input, rate-limits, sanitizes
-- Optionally validates a session token stored in Firestore
-- Obtains a Google-signed ID token and forwards the request to the backend
-- Returns backend response to the client
-
-Deploy to Cloud Run (or Cloud Functions). This proxy expects to run
-on Google Cloud with Application Default Credentials available.
-"""
-
 import os
 import re
 import json
@@ -25,9 +11,6 @@ from google.auth.transport.requests import Request as GoogleRequest
 from google.oauth2 import id_token as google_id_token
 import google.auth
 
-# Firestore (optional session-token validation)
-from google.cloud import firestore
-
 # Rate limiting
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -35,13 +18,11 @@ from flask_limiter.util import get_remote_address
 # ----------------------
 # Configuration via ENV
 # ----------------------
-BACKEND_URL = os.getenv("BACKEND_URL")  # e.g. https://nifty-bot-566869872467.us-east5.run.app
+BACKEND_URL = os.getenv("BACKEND_URL")
 FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "https://oravec.io")
 RATE_LIMIT = os.getenv("RATE_LIMIT", "10 per minute")  # string accepted by flask-limiter
 MAX_MESSAGE_LENGTH = int(os.getenv("MAX_MESSAGE_LENGTH", "1000"))
 REDIS_URL = os.getenv("REDIS_URL")  # optional: e.g. redis://:password@host:6379/0
-REQUIRE_SESSION_TOKEN = os.getenv("REQUIRE_SESSION_TOKEN", "false").lower() == "true"
-SESSION_TOKEN_COLLECTION = os.getenv("SESSION_TOKEN_COLLECTION", "session_tokens")  # Firestore collection name
 ENV = os.getenv("ENV", "production")
 
 # Basic logging
@@ -89,14 +70,6 @@ else:
     )
 
 # ----------------------
-# Firestore client (optional)
-# ----------------------
-firestore_client = None
-if REQUIRE_SESSION_TOKEN:
-    # Firestore client will use ADC (Cloud Run service account) in production
-    firestore_client = firestore.Client()
-
-# ----------------------
 # Helpers
 # ----------------------
 def sanitize_text(text: str) -> str:
@@ -116,24 +89,6 @@ def validate_user_id(user_id: str) -> bool:
         return True
     except Exception:
         return False
-
-def validate_session_token(token: str) -> bool:
-    """
-    If REQUIRE_SESSION_TOKEN is enabled, check Firestore collection
-    for a token document with active==True.
-    """
-    if not REQUIRE_SESSION_TOKEN:
-        return True  # not required
-    if not token:
-        return False
-    try:
-        doc = firestore_client.collection(SESSION_TOKEN_COLLECTION).document(token).get()
-        if doc.exists:
-            data = doc.to_dict() or {}
-            return bool(data.get("active", False))
-    except Exception as e:
-        logger.exception("Error validating session token: %s", e)
-    return False
 
 def get_id_token_for_backend(audience: str) -> str:
     """
@@ -173,12 +128,6 @@ def chat_proxy():
     # Validate message length
     if len(message) > MAX_MESSAGE_LENGTH:
         return jsonify({"error": f"message too long (max {MAX_MESSAGE_LENGTH} characters)"}), 400
-
-    # Optional: validate session token header
-    session_token = request.headers.get("x-session-token")
-    if REQUIRE_SESSION_TOKEN:
-        if not validate_session_token(session_token):
-            return jsonify({"error": "Invalid or missing session token"}), 401
 
     # Sanitize message
     safe_message = sanitize_text(message)
