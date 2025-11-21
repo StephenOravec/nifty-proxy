@@ -21,7 +21,6 @@ FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "https://oravec.io")
 RATE_LIMIT = os.getenv("RATE_LIMIT", "10 per minute")  # string accepted by flask-limiter
 MAX_MESSAGE_LENGTH = int(os.getenv("MAX_MESSAGE_LENGTH", "1000"))
 REDIS_URL = os.getenv("REDIS_URL")  # optional: e.g. redis://:password@host:6379/0
-ENV = os.getenv("ENV", "production")
 
 # Basic logging
 logging.basicConfig(level=logging.INFO)
@@ -167,14 +166,3 @@ def chat_proxy():
         return (resp.text, resp.status_code, resp.headers.items())
 
     return (jsonify(content), resp.status_code)
-
-# ----------------------
-# Run locally for testing (not used in Cloud Run)
-# ----------------------
-if __name__ == "__main__":
-    # In development you might allow CORS from localhost, but avoid this in prod
-    if ENV != "production":
-        app.run(host="0.0.0.0", port=8080, debug=True)
-    else:
-        app.run(host="0.0.0.0", port=8080)
-
