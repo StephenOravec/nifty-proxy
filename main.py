@@ -1,20 +1,18 @@
 import os
 import re
-import uuid
 import logging
 from flask import Flask, request, jsonify
+from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import requests
 
-# Google auth libs for ID token creation
+# Google auth for backend authentication
 from google.auth.transport.requests import Request as GoogleRequest
 from google.oauth2 import id_token as google_id_token
 
-# Rate limiting
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-
 # ----------------------
-# Configuration via ENV
+# Configuration
 # ----------------------
 BACKEND_URL = os.getenv("BACKEND_URL")
 FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "https://oravec.io")
@@ -29,7 +27,6 @@ logger = logging.getLogger("nifty-proxy")
 # ----------------------
 # App + CORS (simple)
 # ----------------------
-from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app, origins=[FRONTEND_ORIGIN])
@@ -79,14 +76,6 @@ def sanitize_text(text: str) -> str:
     text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", text)
     return text.strip()
 
-def validate_user_id(user_id: str) -> bool:
-    """Expect a UUID v4 user_id (anonymous). Return True if valid."""
-    try:
-        uuid_obj = uuid.UUID(user_id, version=4)
-        return True
-    except Exception:
-        return False
-
 def get_id_token_for_backend(audience: str) -> str:
     """
     Obtain an identity token with the Cloud Run backend URL as audience.
@@ -117,10 +106,6 @@ def chat_proxy():
     message = data.get("message")
     if not user_id or not message:
         return jsonify({"error": "user_id and message required"}), 400
-
-    # Validate user_id format (UUID v4)
-    if not validate_user_id(user_id):
-        return jsonify({"error": "user_id must be a UUID v4"}), 400
 
     # Validate message length
     if len(message) > MAX_MESSAGE_LENGTH:
