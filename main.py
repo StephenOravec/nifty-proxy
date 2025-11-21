@@ -1,6 +1,5 @@
 import os
 import re
-import json
 import uuid
 import logging
 from flask import Flask, request, jsonify
@@ -9,7 +8,6 @@ import requests
 # Google auth libs for ID token creation
 from google.auth.transport.requests import Request as GoogleRequest
 from google.oauth2 import id_token as google_id_token
-import google.auth
 
 # Rate limiting
 from flask_limiter import Limiter
