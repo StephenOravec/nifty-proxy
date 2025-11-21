@@ -18,7 +18,6 @@ BACKEND_URL = os.getenv("BACKEND_URL")
 FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "https://oravec.io")
 RATE_LIMIT = os.getenv("RATE_LIMIT", "10 per minute")  # string accepted by flask-limiter
 MAX_MESSAGE_LENGTH = int(os.getenv("MAX_MESSAGE_LENGTH", "1000"))
-REDIS_URL = os.getenv("REDIS_URL")  # optional: e.g. redis://:password@host:6379/0
 
 # Basic logging
 logging.basicConfig(level=logging.INFO)
@@ -27,41 +26,28 @@ logger = logging.getLogger("nifty-proxy")
 # ----------------------
 # App + CORS (simple)
 # ----------------------
-
 app = Flask(__name__)
 CORS(app, origins=[FRONTEND_ORIGIN])
 
 # ----------------------
-# Rate limiter setup
+# Rate Limiter
 # ----------------------
 def client_key_func():
-    """
-    Use user_id from JSON if present (so rate-limits apply per anonymous user),
-    otherwise fallback to IP address.
-    """
+    """Rate limit by user_id if present, otherwise by IP."""
     try:
-        js = request.get_json(silent=True) or {}
-        uid = js.get("user_id")
-        if uid:
-            return str(uid)
+        data = request.get_json(silent=True) or {}
+        user_id = data.get("user_id")
+        if user_id:
+            return str(user_id)
     except Exception:
         pass
     return get_remote_address()
 
-if REDIS_URL:
-    limiter = Limiter(
-        app,
-        key_func=client_key_func,
-        storage_uri=REDIS_URL,
-        default_limits=[RATE_LIMIT]
-    )
-else:
-    # In-memory limiter (per instance). OK for small workloads/testing.
-    limiter = Limiter(
-        app=app,
-        key_func=client_key_func,
-        default_limits=[RATE_LIMIT]
-    )
+limiter = Limiter(
+    app=app,
+    key_func=client_key_func,
+    default_limits=[RATE_LIMIT]
+)
 
 # ----------------------
 # Helpers
