@@ -101,7 +101,7 @@ def chat_proxy():
         return jsonify({"error": "Server misconfiguration"}), 500
 
     try:
-        id_tok = get_id_token_for_backend(BACKEND_URL)
+        id_token = get_id_token_for_backend(BACKEND_URL)
     except Exception as e:
         logger.exception("Failed to obtain ID token for backend: %s", e)
         return jsonify({"error": "Failed to authenticate to backend"}), 500
