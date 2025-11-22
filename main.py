@@ -16,15 +16,15 @@ from google.oauth2 import id_token as google_id_token
 # ----------------------
 BACKEND_URL = os.getenv("BACKEND_URL")
 FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "https://oravec.io")
-RATE_LIMIT = os.getenv("RATE_LIMIT", "10 per minute")  # string accepted by flask-limiter
+RATE_LIMIT = os.getenv("RATE_LIMIT", "10 per minute")
 MAX_MESSAGE_LENGTH = int(os.getenv("MAX_MESSAGE_LENGTH", "1000"))
 
-# Basic logging
+# Logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("nifty-proxy")
 
 # ----------------------
-# App + CORS (simple)
+# App Setup
 # ----------------------
 app = Flask(__name__)
 CORS(app, origins=[FRONTEND_ORIGIN])
@@ -53,25 +53,17 @@ limiter = Limiter(
 # Helpers
 # ----------------------
 def sanitize_text(text: str) -> str:
-    """Simple sanitization: strip HTML tags and control chars."""
+    """Strip HTML tags and control chars."""
     if text is None:
         return ""
-    # Remove any HTML tags
     text = re.sub(r"<.*?>", "", text)
-    # Remove control characters except newline/tab
     text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", text)
     return text.strip()
 
 def get_id_token_for_backend(audience: str) -> str:
-    """
-    Obtain an identity token with the Cloud Run backend URL as audience.
-    This uses Application Default Credentials (the service account of the proxy).
-    """
-    # Use google.oauth2.id_token.fetch_id_token backed by ADC
-    # GoogleRequest is required as the transport.
+    """Get Google ID token for backend authentication."""
     req = GoogleRequest()
-    token = google_id_token.fetch_id_token(req, audience)
-    return token
+    return google_id_token.fetch_id_token(req, audience)
 
 # ----------------------
 # Endpoints
@@ -81,7 +73,7 @@ def health_check():
     return jsonify({"status": "proxy-running"}), 200
 
 @app.route("/chat", methods=["POST"])
-@limiter.limit(RATE_LIMIT)  # explicit per-route limit (same as default)
+@limiter.limit(RATE_LIMIT)
 def chat_proxy():
     # Validate JSON body
     data = request.get_json(silent=True)
@@ -97,13 +89,12 @@ def chat_proxy():
     if len(message) > MAX_MESSAGE_LENGTH:
         return jsonify({"error": f"message too long (max {MAX_MESSAGE_LENGTH} characters)"}), 400
 
-    # Sanitize message
-    safe_message = sanitize_text(message)
+    # Prepare payload
+    payload = {
+        "user_id": user_id,
+        "message": sanitize_text(message)}
 
-    # Prepare payload to backend (we pass user_id and sanitized message)
-    payload = {"user_id": user_id, "message": safe_message}
-
-    # Acquire an ID token for backend authentication (Cloud Run IAM)
+    # Get backend auth token
     if not BACKEND_URL:
         logger.error("BACKEND_URL is not configured")
         return jsonify({"error": "Server misconfiguration"}), 500
