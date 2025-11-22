@@ -92,7 +92,8 @@ def chat_proxy():
     # Prepare payload
     payload = {
         "user_id": user_id,
-        "message": sanitize_text(message)}
+        "message": sanitize_text(message)
+    }
 
     # Get backend auth token
     if not BACKEND_URL:
@@ -111,20 +112,14 @@ def chat_proxy():
             f"{BACKEND_URL.rstrip('/')}/chat",
             json=payload,
             headers={
-                "Authorization": f"Bearer {id_tok}",
+                "Authorization": f"Bearer {id_token}",
                 "Content-Type": "application/json"
             },
             timeout=15
         )
+        return jsonify(resp.json()), resp.status_code
     except requests.RequestException as e:
-        logger.exception("Request to backend failed: %s", e)
+        logger.exception("Backend request failed: %s", e)
         return jsonify({"error": "Failed to reach backend"}), 502
-
-    # Proxy the backend response (assume JSON)
-    try:
-        content = resp.json()
     except ValueError:
-        # Backend did not return JSON
-        return (resp.text, resp.status_code, resp.headers.items())
-
-    return (jsonify(content), resp.status_code)
+        return resp.text, resp.status_code
