@@ -14,7 +14,7 @@ from google.oauth2 import id_token as google_id_token
 # ----------------------
 # Configuration
 # ----------------------
-BACKEND_URL = os.getenv("BACKEND_URL")
+NIFTYBOT_BACKEND_URL = os.getenv("NIFTYBOT_BACKEND_URL")
 FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "https://oravec.io")
 RATE_LIMIT = os.getenv("RATE_LIMIT", "10 per minute")
 MAX_MESSAGE_LENGTH = int(os.getenv("MAX_MESSAGE_LENGTH", "1000"))
@@ -72,7 +72,7 @@ def get_id_token_for_backend(audience: str) -> str:
 def health_check():
     return jsonify({"status": "proxy-running"}), 200
 
-@app.route("/chat", methods=["POST"])
+@app.route("/niftybot/chat", methods=["POST"])
 @limiter.limit(RATE_LIMIT)
 def chat_proxy():
     # Validate JSON body
@@ -96,12 +96,12 @@ def chat_proxy():
     }
 
     # Get backend auth token
-    if not BACKEND_URL:
+    if not NIFTYBOT_BACKEND_URL:
         logger.error("BACKEND_URL is not configured")
         return jsonify({"error": "Server misconfiguration"}), 500
 
     try:
-        id_token = get_id_token_for_backend(BACKEND_URL)
+        id_token = get_id_token_for_backend(NIFTYBOT_BACKEND_URL)
     except Exception as e:
         logger.exception("Failed to obtain ID token for backend: %s", e)
         return jsonify({"error": "Failed to authenticate to backend"}), 500
@@ -109,7 +109,7 @@ def chat_proxy():
     # Forward to backend
     try:
         resp = requests.post(
-            f"{BACKEND_URL.rstrip('/')}/chat",
+            f"{NIFTYBOT_BACKEND_URL.rstrip('/')}/chat",
             json=payload,
             headers={
                 "Authorization": f"Bearer {id_token}",
