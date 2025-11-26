@@ -78,7 +78,7 @@ def health_check():
 # ----------------------
 @app.route("/niftybot/chat", methods=["POST"])
 @limiter.limit(RATE_LIMIT)
-def chat_proxy():
+def chat_proxy_v1():
     # Validate JSON body
     data = request.get_json(silent=True)
     if not data:
@@ -133,7 +133,7 @@ def chat_proxy():
 # ----------------------
 @app.route("/niftybotv2/chat", methods=["POST"])
 @limiter.limit(RATE_LIMIT)
-def chat_proxy():
+def chat_proxy_v2():
     # Validate JSON body
     data = request.get_json(silent=True)
     if not data:
