@@ -101,7 +101,7 @@ def chat_proxy_v1():
 
     # Get backend auth token
     if not NIFTYBOT_BACKEND_URL:
-        logger.error("BACKEND_URL is not configured")
+        logger.error("NIFTYBOT_BACKEND_URL is not configured")
         return jsonify({"error": "Server misconfiguration"}), 500
 
     try:
@@ -156,7 +156,7 @@ def chat_proxy_v2():
 
     # Get backend auth token
     if not NIFTYBOTV2_BACKEND_URL:
-        logger.error("BACKEND_URL is not configured")
+        logger.error("NIFTYBOTV2_BACKEND_URL is not configured")
         return jsonify({"error": "Server misconfiguration"}), 500
 
     try:
