@@ -34,14 +34,7 @@ CORS(app, origins=[FRONTEND_ORIGIN])
 # Rate Limiter
 # ----------------------
 def client_key_func():
-    """Rate limit by user_id if present, otherwise by IP."""
-    try:
-        data = request.get_json(silent=True) or {}
-        user_id = data.get("user_id")
-        if user_id:
-            return str(user_id)
-    except Exception:
-        pass
+    """Rate limit by IP address only."""
     return get_remote_address()
 
 limiter = Limiter(
