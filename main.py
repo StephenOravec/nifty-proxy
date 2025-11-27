@@ -132,10 +132,11 @@ def chat_proxy_v2():
     if not data:
         return jsonify({"error": "Invalid JSON body"}), 400
 
-    user_id = data.get("user_id")
+    session_id = data.get("session_id")
     message = data.get("message")
-    if not user_id or not message:
-        return jsonify({"error": "user_id and message required"}), 400
+
+    if not message:
+        return jsonify({"error": "message required"}), 400
 
     # Validate message length
     if len(message) > MAX_MESSAGE_LENGTH:
@@ -143,7 +144,7 @@ def chat_proxy_v2():
 
     # Prepare payload
     payload = {
-        "user_id": user_id,
+        "session_id": session_id,
         "message": sanitize_text(message)
     }
 
@@ -170,8 +171,10 @@ def chat_proxy_v2():
             timeout=15
         )
         return jsonify(resp.json()), resp.status_code
+
     except requests.RequestException as e:
         logger.exception("Backend request failed: %s", e)
         return jsonify({"error": "Failed to reach backend"}), 502
+
     except ValueError:
         return resp.text, resp.status_code
