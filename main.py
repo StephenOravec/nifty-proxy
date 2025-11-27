@@ -7,7 +7,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import requests
 
-# Google auth for backend authentication
+# Google Cloud Run service-to-service authentication
 from google.auth.transport.requests import Request as GoogleRequest
 from google.oauth2 import id_token as google_id_token
 
@@ -55,7 +55,7 @@ def sanitize_text(text: str) -> str:
     return text.strip()
 
 def get_id_token_for_backend(audience: str) -> str:
-    """Get Google ID token for backend authentication."""
+    """Get Google ID token for Cloud Run service-to-service authentication."""
     req = GoogleRequest()
     return google_id_token.fetch_id_token(req, audience)
 
@@ -148,11 +148,12 @@ def chat_proxy_v2():
         "message": sanitize_text(message)
     }
 
-    # Get backend auth token
+    # Verify backend URL is set
     if not NIFTYBOTV2_BACKEND_URL:
         logger.error("NIFTYBOTV2_BACKEND_URL is not configured")
         return jsonify({"error": "Server misconfiguration"}), 500
-
+    
+    # Generate Cloud Run auth token for backend URL
     try:
         id_token = get_id_token_for_backend(NIFTYBOTV2_BACKEND_URL)
     except Exception as e:
