@@ -16,6 +16,7 @@ from google.oauth2 import id_token as google_id_token
 # ----------------------
 NIFTYBOT_BACKEND_URL = os.getenv("NIFTYBOT_BACKEND_URL")
 NIFTYBOTV2_BACKEND_URL = os.getenv("NIFTYBOTV2_BACKEND_URL")
+NIFTYBOTV3_BACKEND_URL = os.getenv("NIFTYBOTV3_BACKEND_URL")
 FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "https://oravec.io")
 RATE_LIMIT = os.getenv("RATE_LIMIT", "10 per minute")
 MAX_MESSAGE_LENGTH = int(os.getenv("MAX_MESSAGE_LENGTH", "1000"))
@@ -164,6 +165,66 @@ def chat_proxy_v2():
     try:
         resp = requests.post(
             f"{NIFTYBOTV2_BACKEND_URL.rstrip('/')}/chat",
+            json=payload,
+            headers={
+                "Authorization": f"Bearer {id_token}",
+                "Content-Type": "application/json"
+            },
+            timeout=15
+        )
+        return jsonify(resp.json()), resp.status_code
+
+    except requests.RequestException as e:
+        logger.exception("Backend request failed: %s", e)
+        return jsonify({"error": "Failed to reach backend"}), 502
+
+    except ValueError:
+        return resp.text, resp.status_code
+
+
+# ----------------------
+# nifty-bot-v3
+# ----------------------
+@app.route("/niftybotv3/chat", methods=["POST"])
+@limiter.limit(RATE_LIMIT)
+def chat_proxy_v3():
+    # Validate JSON body
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "Invalid JSON body"}), 400
+
+    session_id = data.get("session_id")
+    message = data.get("message")
+
+    if not message:
+        return jsonify({"error": "message required"}), 400
+
+    # Validate message length
+    if len(message) > MAX_MESSAGE_LENGTH:
+        return jsonify({"error": f"message too long (max {MAX_MESSAGE_LENGTH} characters)"}), 400
+
+    # Prepare payload
+    payload = {
+        "session_id": session_id,
+        "message": sanitize_text(message)
+    }
+
+    # Verify backend URL is set
+    if not NIFTYBOTV3_BACKEND_URL:
+        logger.error("NIFTYBOTV3_BACKEND_URL is not configured")
+        return jsonify({"error": "Server misconfiguration"}), 500
+    
+    # Generate Cloud Run auth token for backend URL
+    try:
+        id_token = get_id_token_for_backend(NIFTYBOTV3_BACKEND_URL)
+    except Exception as e:
+        logger.exception("Failed to obtain ID token for backend: %s", e)
+        return jsonify({"error": "Failed to authenticate to backend"}), 500
+
+    # Forward to backend
+    try:
+        resp = requests.post(
+            f"{NIFTYBOTV3_BACKEND_URL.rstrip('/')}/chat",
             json=payload,
             headers={
                 "Authorization": f"Bearer {id_token}",
