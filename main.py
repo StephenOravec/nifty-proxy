@@ -248,7 +248,7 @@ def chat_proxy_v3():
 # ----------------------
 @app.route("/niftybotv4/chat", methods=["POST"])
 @limiter.limit(RATE_LIMIT)
-def chat_proxy_v3():
+def chat_proxy_v4():
     # Validate JSON body
     data = request.get_json(silent=True)
     if not data:
