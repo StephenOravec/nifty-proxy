@@ -114,7 +114,7 @@ def chat_proxy_v1():
                 "Authorization": f"Bearer {id_token}",
                 "Content-Type": "application/json"
             },
-            timeout=15
+            timeout=30
         )
         return jsonify(resp.json()), resp.status_code
     except requests.RequestException as e:
@@ -171,7 +171,7 @@ def chat_proxy_v2():
                 "Authorization": f"Bearer {id_token}",
                 "Content-Type": "application/json"
             },
-            timeout=15
+            timeout=30
         )
         return jsonify(resp.json()), resp.status_code
 
@@ -231,7 +231,7 @@ def chat_proxy_v3():
                 "Authorization": f"Bearer {id_token}",
                 "Content-Type": "application/json"
             },
-            timeout=15
+            timeout=30
         )
         return jsonify(resp.json()), resp.status_code
 
@@ -291,7 +291,7 @@ def chat_proxy_v4():
                 "Authorization": f"Bearer {id_token}",
                 "Content-Type": "application/json"
             },
-            timeout=15
+            timeout=30
         )
         return jsonify(resp.json()), resp.status_code
 
