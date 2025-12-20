@@ -317,6 +317,7 @@ def chat_proxy_bunny():
 
     session_id = data.get("session_id")
     message = data.get("message")
+    timezone = data.get("timezone", "America/New_York")
 
     if not message:
         return jsonify({"error": "message required"}), 400
@@ -328,7 +329,8 @@ def chat_proxy_bunny():
     # Prepare payload
     payload = {
         "session_id": session_id,
-        "message": sanitize_text(message)
+        "message": sanitize_text(message),
+        "timezone": timezone
     }
 
     # Verify backend URL is set
